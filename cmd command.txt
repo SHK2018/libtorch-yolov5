@@ -1,0 +1,14 @@
+需要安装的库：
+CUAA + CUDNN（GPU计算加速库）
+Torch (深度学习库)
+OpenCV （图像处理库）
+
+Cmake时需要用到的CMD命令：
+cmake -DCMAKE_PREFIX_PATH=D:/opencv430/build/x64/vc15/lib;D:/libtorch -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 15 Win64" ..
+
+cmake --build . --config Release 
+
+加载模型，数据和命令行：
+../weights/coco.txt
+
+--source ../images/car.mp4 --weights ../weights/yolov5s.torchscript.pt --view-img --gpu

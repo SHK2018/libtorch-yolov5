@@ -5,6 +5,7 @@ build/
 cmake-build-debug/
 *.pt
 *.jpg
+*.mp4
 
 # Prerequisites
 *.d

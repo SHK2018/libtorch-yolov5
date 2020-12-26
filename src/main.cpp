@@ -25,7 +25,7 @@ std::vector<std::string> LoadNames(const std::string& path) {
 }
 
 
-void Demo(cv::Mat& img,
+bool Demo(cv::Mat& img,
         const std::vector<std::vector<Detection>>& detections,
         const std::vector<std::string>& class_names,
         bool label = true) {
@@ -60,7 +60,8 @@ void Demo(cv::Mat& img,
 
     cv::namedWindow("Result", cv::WINDOW_AUTOSIZE);
     cv::imshow("Result", img);
-    cv::waitKey(0);
+	if (cv::waitKey(1) == 27) return true;
+	return false;
 }
 
 
@@ -96,7 +97,7 @@ int main(int argc, const char* argv[]) {
     }
 
     // load class names from dataset for visualization
-    std::vector<std::string> class_names = LoadNames("../weights/coco.names");
+    std::vector<std::string> class_names = LoadNames("../weights/coco.txt");
     if (class_names.empty()) {
         return -1;
     }
@@ -105,30 +106,46 @@ int main(int argc, const char* argv[]) {
     std::string weights = opt["weights"].as<std::string>();
     auto detector = Detector(weights, device_type);
 
-    // load input image
-    std::string source = opt["source"].as<std::string>();
-    cv::Mat img = cv::imread(source);
-    if (img.empty()) {
-        std::cerr << "Error loading the image!\n";
-        return -1;
-    }
+    //// load input image
+    //std::string source = opt["source"].as<std::string>();
+    //cv::Mat img = cv::imread(source);
+    //if (img.empty()) {
+    //    std::cerr << "Error loading the image!\n";
+    //    return -1;
+    //}
+
+	// load input video
+	std::string source = opt["source"].as<std::string>();
+	cv::VideoCapture cap = cv::VideoCapture(source);
+	cv::Mat frame, img;
+	cap.read(frame);
+	int width = frame.size().width;
+	int height = frame.size().height;
 
     // run once to warm up
     std::cout << "Run once on empty image" << std::endl;
-    auto temp_img = cv::Mat::zeros(img.rows, img.cols, CV_32FC3);
+    auto temp_img = cv::Mat::zeros(width, height, CV_32FC3);
     detector.Run(temp_img, 1.0f, 1.0f);
 
     // set up threshold
     float conf_thres = opt["conf-thres"].as<float>();
     float iou_thres = opt["iou-thres"].as<float>();
 
-    // inference
-    auto result = detector.Run(img, conf_thres, iou_thres);
-
-    // visualize detections
-    if (opt["view-img"].as<bool>()) {
-        Demo(img, result, class_names);
-    }
+	while (cap.isOpened())
+	{
+		cap.read(frame);
+		if (frame.empty())
+		{
+			std::cout << "Read frame failed!" << std::endl;
+			break;
+		}
+		// inference
+		auto result = detector.Run(frame, conf_thres, iou_thres);
+		// visualize detections
+		if (opt["view-img"].as<bool>()) {
+			if (Demo(frame, result, class_names)) break;
+		}
+	}
 
     cv::destroyAllWindows();
     return 0;
